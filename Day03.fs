@@ -77,13 +77,14 @@ module Puzzle1 =
     |> Input.ctor
     |> aggregate
 
+
 module Puzzle2 =
 
   open System.IO
 
-  let pDo = pWord "do()" |> map (fun _ -> true)
+  let pDo = pWord "do()"
 
-  let pDont = pWord "don't()" |> map (fun _ -> false)
+  let pDont = pWord "don't()"
 
   let aggregate inp =
     let rec loop enabled acc (inp : Input) =
