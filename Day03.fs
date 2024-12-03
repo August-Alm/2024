@@ -29,14 +29,6 @@ let (>>.) p1 p2 = p1 >>= fun _ -> p2 >>= fun x2 -> retur x2
 
 let inline map ([<InlineIfLambda>]f) p = p >>= (retur << f)
 
-let (<*>) f p = map (fun (f, x) -> f x) (f .>>. p)
-
-let (<|>) p1 p2 =
-  fun inp ->
-    match p1 inp with
-    | Some r1 -> Some r1
-    | None -> p2 inp
-
 let pChar c : Parser<char> =
   fun inp ->
     if inp.IsEmpty then None
@@ -62,14 +54,14 @@ let pInt : Parser<int> =
         | true, x -> Some (x, { inp with Start = inp.Start + n })
         | _ -> None
 
+let pMul =
+  pWord "mul" >>. pChar '(' >>. pInt .>> pChar ',' .>>. pInt .>> pChar ')'
+  |> map (fun (x, y) -> x * y)
+
 
 module Puzzle1 =
 
   open System.IO
-
-  let pMul =
-    pWord "mul" >>. pChar '(' >>. pInt .>> pChar ',' .>>. pInt .>> pChar ')'
-    |> map (fun (x, y) -> x * y)
     
   let aggregate inp =
     let rec loop acc (inp : Input) =
@@ -79,6 +71,34 @@ module Puzzle1 =
         | Some (x, inp) -> loop (acc + x) inp
         | None -> loop acc { inp with Start = inp.Start + 1 }
     loop 0 inp
+  
+  let solve (path : string) =
+    File.ReadAllText path
+    |> Input.ctor
+    |> aggregate
+
+module Puzzle2 =
+
+  open System.IO
+
+  let pDo = pWord "do()" |> map (fun _ -> true)
+
+  let pDont = pWord "don't()" |> map (fun _ -> false)
+
+  let aggregate inp =
+    let rec loop enabled acc (inp : Input) =
+      if inp.IsEmpty then acc
+      else
+        match pMul inp with
+        | Some (x, inp) -> loop enabled (if enabled then acc + x else acc) inp
+        | None ->
+          match pDo inp with
+          | Some (_, inp) -> loop true acc inp
+          | None ->
+            match pDont inp with
+            | Some (_, inp) -> loop false acc inp
+            | None -> loop enabled acc { inp with Start = inp.Start + 1 }
+    loop true 0 inp
   
   let solve (path : string) =
     File.ReadAllText path
