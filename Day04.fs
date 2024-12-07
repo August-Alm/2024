@@ -59,10 +59,39 @@ module Puzzle1 =
     | 'S' when Input.tryGet inp pos = Some 'S' -> 1
     | _ -> 0
 
-  let xmasCount (inp : Input) (pos : Position) =
+  let private xmasCount (inp : Input) (pos : Position) =
     Array.sumBy (spell 'X' inp pos) [| NW; N; NE; W; E; SW; S; SE |]
   
   let solve (path : string) =
     let inp = Input.fromFile path
     Array.sumBy (xmasCount inp) (Input.positions inp)
 
+
+module Puzzle2 =
+
+  let private getCorners (corners : char array) inp pos =
+    let xDirs = [| NW; NE; SW; SE |]
+    let rec loop i =
+      i = 4 ||
+        match Input.tryGet inp (Position.add pos xDirs[i]) with
+        | Some c -> corners[i] <- c; loop (i + 1)
+        | _ -> false
+    loop 0
+
+  let private xpell corners inp pos =
+    match Input.tryGet inp pos with
+    | Some 'A' ->
+      if getCorners corners inp pos then
+        match corners with
+        | [| 'M'; 'M'; 'S'; 'S' |] -> 1
+        | [| 'M'; 'S'; 'M'; 'S' |] -> 1
+        | [| 'S'; 'M'; 'S'; 'M' |] -> 1
+        | [| 'S'; 'S'; 'M'; 'M' |] -> 1
+        | _ -> 0
+      else 0
+    | _ -> 0
+
+  let solve (path : string) =
+    let corners = Array.zeroCreate 4
+    let inp = Input.fromFile path
+    Array.sumBy (xpell corners inp) (Input.positions inp)
