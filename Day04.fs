@@ -40,15 +40,6 @@ module Input =
   let tryGet (inp : Input) (pos : Position) =
     if isWithin inp pos then Some (get inp pos) else None
   
-  let ray (inp : Input) (pos : Position) (dir : Direction) =
-    Array.ofList [
-      yield pos
-      yield! List.unfold
-        (fun pos ->
-          let nb = Position.add pos dir
-          if isWithin inp nb then Some (nb, nb) else None)
-        pos ]
-  
   let positions (inp : Input) =
     let result = ResizeArray ()
     inp |> Array.iteri (fun i row ->
