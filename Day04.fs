@@ -1,9 +1,25 @@
 module AdventOfCode.Day04
 
-open System.IO
+[<Struct>]
+type Direction = NW | N | NE | W | E | SW | S | SE
 
 [<Struct>]
 type Position = { Col : int; Row : int }
+
+[<RequireQualifiedAccess>]
+module Position = 
+
+  let inline add (pos : Position) (dir : Direction) =
+    match dir with
+    | NW -> { Col = pos.Col - 1; Row = pos.Row - 1 }
+    | N  -> { Col = pos.Col;     Row = pos.Row - 1 }
+    | NE -> { Col = pos.Col + 1; Row = pos.Row - 1 }
+    | W  -> { Col = pos.Col - 1; Row = pos.Row }
+    | E  -> { Col = pos.Col + 1; Row = pos.Row }
+    | SW -> { Col = pos.Col - 1; Row = pos.Row + 1 }
+    | S  -> { Col = pos.Col;     Row = pos.Row + 1 }
+    | SE -> { Col = pos.Col + 1; Row = pos.Row + 1 }
+
 
 type Input = char array array
 
@@ -11,7 +27,7 @@ type Input = char array array
 module Input =
 
   let fromFile (path : string) =
-    File.ReadAllLines path
+    System.IO.File.ReadAllLines path
     |> Array.map (fun s -> s.ToCharArray ())
   
   let isWithin (inp : Input) (pos : Position) =
@@ -19,24 +35,19 @@ module Input =
     (pos.Col >= 0 && pos.Col < inp[pos.Row].Length)
   
   let inline get (inp : Input) (pos : Position) =
-    inp[pos.Row][pos.Col] 
+    inp[pos.Row][pos.Col]
   
-  let private directions =
-    [|
-      { Col = -1; Row = -1 }
-      { Col =  0; Row = -1 }
-      { Col =  1; Row = -1 }
-      { Col = -1; Row =  0 }
-      { Col =  1; Row =  0 }
-      { Col = -1; Row =  1 }
-      { Col =  0; Row =  1 }
-      { Col =  1; Row =  1 }
-    |]
+  let tryGet (inp : Input) (pos : Position) =
+    if isWithin inp pos then Some (get inp pos) else None
   
-  let neighbors (inp : Input) (pos : Position) =
-    directions |> Array. choose (fun dir ->
-      let nb = { Col = pos.Col + dir.Col; Row = pos.Row + dir.Row }
-      if isWithin inp nb then Some nb else None)
+  let ray (inp : Input) (pos : Position) (dir : Direction) =
+    Array.ofList [
+      yield pos
+      yield! List.unfold
+        (fun pos ->
+          let nb = Position.add pos dir
+          if isWithin inp nb then Some (nb, nb) else None)
+        pos ]
   
   let positions (inp : Input) =
     let result = ResizeArray ()
@@ -48,24 +59,19 @@ module Input =
 
 module Puzzle1 =
 
-  let rec private spell letter inp pos : int =
-    let inline go letter inp pos =
-      Input.neighbors inp pos
-      |> Array.sumBy (fun nb -> spell letter inp nb)
+  let rec private spell letter inp pos dir =
+    let go letter pos dir = spell letter inp (Position.add pos dir) dir
     match letter with
-    | 'X' when Input.get inp pos = 'X' -> go 'M' inp pos
-    | 'M' when Input.get inp pos = 'M' -> go 'A' inp pos
-    | 'A' when Input.get inp pos = 'A' -> go 'S' inp pos
-    | 'S' when Input.get inp pos = 'S' -> 1
+    | 'X' when Input.tryGet inp pos = Some 'X' -> go 'M' pos dir
+    | 'M' when Input.tryGet inp pos = Some 'M' -> go 'A' pos dir
+    | 'A' when Input.tryGet inp pos = Some 'A' -> go 'S' pos dir
+    | 'S' when Input.tryGet inp pos = Some 'S' -> 1
     | _ -> 0
+
+  let xmasCount (inp : Input) (pos : Position) =
+    Array.sumBy (spell 'X' inp pos) [| NW; N; NE; W; E; SW; S; SE |]
   
   let solve (path : string) =
     let inp = Input.fromFile path
-    Input.positions inp
-    |> Array.sumBy (spell 'X' inp)
-
-
-
-  
-
+    Array.sumBy (xmasCount inp) (Input.positions inp)
 
