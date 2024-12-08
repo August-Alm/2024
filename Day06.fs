@@ -1,53 +1,45 @@
 module AdventOfCode.Day06
 
 open System.Collections.Generic
-open System.Numerics
+open Gaussian
 
 [<RequireQualifiedAccess>]
 module Dir =
 
-  let up = -Complex.One
-  let down = Complex.One
-  let left = -Complex.ImaginaryOne
-  let right = Complex.ImaginaryOne
-  let turn dir = -Complex.ImaginaryOne * dir
+  let up = -Gaussian.One
+  let turn dir = Gaussian.rotateR dir
 
 
 type Lab (path : string) =
   let mutable rows = 0
   let mutable cols = 0
-  let mutable guard = Complex.Zero
-  let obstacles = HashSet<Complex> ()
+  let mutable guard = Gaussian.Zero
+  let obstacles = HashSet<Gaussian> ()
 
   do
     let lines = System.IO.File.ReadAllLines path
     rows <- lines.Length
-    if rows > 0 then
-      cols <- lines[0].Length
-      for i in 0 .. rows - 1 do
-        for j in 0 .. cols - 1 do
-          match lines[i][j] with
-          | '#' -> obstacles.Add (Complex (i, j)) |> ignore
-          | '^' -> guard <- Complex (i, j)
-          | 'v' -> guard <- Complex (i, j)
-          | '<' -> guard <- Complex (i, j)
-          | '>' -> guard <- Complex (i, j)
-          | _ -> ()
+    cols <- lines[0].Length
+    for i in 0 .. rows - 1 do
+      for j in 0 .. cols - 1 do
+        match lines[i][j] with
+        | '#' -> obstacles.Add { X = i; Y = j } |> ignore
+        | '^' -> guard <- { X = i; Y = j }
+        | _ -> ()
   
   member _.Guard = guard
   
-  member _.IsObstructed (z : Complex) = obstacles.Contains z
+  member _.IsObstructed (z : Gaussian) = obstacles.Contains z
 
-  member _.Contains (z : Complex) =
-    (z.Imaginary >= 0 && z.Imaginary < cols) &&
-    (z.Real >= 0 && z.Real < rows)
+  member _.Contains (z : Gaussian) =
+    (z.Y >= 0 && z.Y < cols) && (z.X >= 0 && z.X < rows)
 
 
 [<RequireQualifiedAccess>]
 module Lab =
 
   let run (lab : Lab) =
-    let visited = HashSet<Complex> ()
+    let visited = HashSet<Gaussian> ()
     let mutable guard = lab.Guard
     let mutable dir = Dir.up
     while lab.Contains guard do
@@ -59,10 +51,10 @@ module Lab =
         guard <- next
     visited
   
-  let private check (lab : Lab) (obstacle : Complex) =
+  let private check (lab : Lab) (obstacle : Gaussian) =
     let mutable pos = lab.Guard
     let mutable dir = Dir.up
-    let visited = HashSet<struct (Complex * Complex)> ()
+    let visited = HashSet<struct (Gaussian * Gaussian)> ()
     while visited.Add (pos, dir) && lab.Contains (pos + dir) do
       let next = pos + dir
       if next = obstacle || lab.IsObstructed next then

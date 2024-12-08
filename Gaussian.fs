@@ -26,4 +26,5 @@ with
 
   static member ofInt n = { X = n; Y = 0 }
 
-  static member turnRight a = Gaussian.ImaginaryOne * a
+  static member rotateL a = Gaussian.ImaginaryOne * a
+  static member rotateR a = -Gaussian.ImaginaryOne * a
