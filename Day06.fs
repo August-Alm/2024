@@ -35,47 +35,42 @@ type Lab (path : string) =
     (z.Y >= 0 && z.Y < cols) && (z.X >= 0 && z.X < rows)
 
 
-[<RequireQualifiedAccess>]
-module Lab =
+let run (lab : Lab) =
+  let visited = HashSet<Gaussian> ()
+  let mutable guard = lab.Guard
+  let mutable dir = Dir.up
+  while lab.Contains guard do
+    visited.Add guard |> ignore
+    let next = guard + dir
+    if lab.Contains next && lab.IsObstructed next then
+      dir <- Dir.turn dir
+    else
+      guard <- next
+  visited
 
-  let run (lab : Lab) =
-    let visited = HashSet<Gaussian> ()
-    let mutable guard = lab.Guard
-    let mutable dir = Dir.up
-    while lab.Contains guard do
-      visited.Add guard |> ignore
-      let next = guard + dir
-      if lab.Contains next && lab.IsObstructed next then
-        dir <- Dir.turn dir
-      else
-        guard <- next
-    visited
-  
-  let private check (lab : Lab) (obstacle : Gaussian) =
-    let mutable pos = lab.Guard
-    let mutable dir = Dir.up
-    let visited = HashSet<struct (Gaussian * Gaussian)> ()
-    while visited.Add (pos, dir) && lab.Contains (pos + dir) do
-      let next = pos + dir
-      if next = obstacle || lab.IsObstructed next then
-        dir <- Dir.turn dir
-      else
-        pos <- next
-    if lab.Contains (pos + dir) then 1 else 0
-  
-  let loops (lab : Lab) =
-    let path = run lab
-    path.Remove lab.Guard |> ignore
-    Array.Parallel.sumBy (check lab) (Array.ofSeq path)
+let private check (lab : Lab) (obstacle : Gaussian) =
+  let mutable pos = lab.Guard
+  let mutable dir = Dir.up
+  let visited = HashSet<struct (Gaussian * Gaussian)> ()
+  while visited.Add (pos, dir) && lab.Contains (pos + dir) do
+    let next = pos + dir
+    if next = obstacle || lab.IsObstructed next then
+      dir <- Dir.turn dir
+    else
+      pos <- next
+  if lab.Contains (pos + dir) then 1 else 0
+
+let loops (lab : Lab) =
+  let path = run lab
+  path.Remove lab.Guard |> ignore
+  Array.Parallel.sumBy (check lab) (Array.ofSeq path)
 
 
 module Puzzle1 =
 
-  let solve (path : string) =
-    (Lab.run (Lab path)).Count
+  let solve = Lab >> run >> Seq.length
 
 
 module Puzzle2 =
 
-  let solve (path : string) =
-    Lab.loops (Lab path)
+  let solve = Lab >> loops
