@@ -14,7 +14,7 @@ let parse path =
     |> Seq.map (fun (_, group) -> Seq.toArray group)
   map, antennas
 
-let countSimple (map, antennas) =
+let simple (map, antennas) =
   let antinodes = HashSet<Gaussian> ()
   for set in antennas do
     for pos in set do
@@ -25,7 +25,7 @@ let countSimple (map, antennas) =
   |> Seq.filter (Plane.contains map)
   |> Seq.length
 
-let countResonant (map, antennas) =
+let resonant (map, antennas) =
   let antinodes = HashSet<Gaussian> ()
   for set in antennas do
     for pos in set do
@@ -43,9 +43,9 @@ let countResonant (map, antennas) =
 
 module Puzzle1 =
   
-  let solve = parse >> countSimple
+  let solve = parse >> simple
 
 
 module Puzzle2 =
   
-  let solve = parse >> countResonant
+  let solve = parse >> resonant
